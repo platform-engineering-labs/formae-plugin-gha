@@ -1,0 +1,34 @@
+/// GitHub Actions plugin base module.
+///
+/// Provides target configuration, type aliases, and annotation classes
+/// used by all GHA resource schemas.
+module gha
+
+import "@formae/formae.pkl"
+
+/// Visibility options for organization-scoped secrets and variables.
+typealias Visibility = "all"|"private"|"selected"
+
+/// GitHub Actions target configuration.
+open class Config {
+    hidden fixed type: String = "GHA"
+
+    /// GitHub owner (user or organization name).
+    hidden owner: String
+
+    /// Repository name. Required for repo-scoped resources.
+    hidden repo: String?
+
+    fixed Type: String = type
+    fixed Owner: String = owner
+    fixed Repo: String? = repo
+}
+
+/// Field-level annotation for GHA resource properties.
+class FieldHint extends formae.FieldHint {}
+
+/// Resource-level annotation for GHA resources.
+class ResourceHint extends formae.ResourceHint {}
+
+/// Sub-resource annotation for nested types.
+class SubResourceHint extends formae.SubResourceHint {}

@@ -1,0 +1,77 @@
+/// Reusable class that composes an environment with its child resources.
+///
+/// Given an environment name, protection rules, and maps of secrets/variables,
+/// produces a flat listing of all formae resources needed. Child resources
+/// reference the parent environment via env.res.name, which creates a
+/// dependency that formae uses for correct ordering on destroy.
+module environment_resources
+
+import "@formae/formae.pkl"
+import "@gha/env/environment.pkl"
+import "@gha/env/envsecret.pkl"
+import "@gha/env/envvariable.pkl"
+import "@gha/env/branchpolicy.pkl"
+
+class EnvironmentResources {
+    envName: String
+    envWaitTimer: Int = 0
+    envReviewers: Listing<environment.Reviewer> = new {}
+    envPreventSelfReview: Boolean = false
+    branchPatterns: Listing<String> = new {}
+    secrets: Mapping<String, String> = new {}
+    variables: Mapping<String, String> = new {}
+
+    hidden env: environment.Environment = new {
+        label = envName
+        name = envName
+        waitTimer = envWaitTimer
+        preventSelfReview = envPreventSelfReview
+        canAdminsBypass = true
+        reviewers = envReviewers
+        deploymentBranchPolicy = if (branchPatterns.length > 0)
+            new environment.DeploymentBranchPolicyConfig {
+                protectedBranches = false
+                customBranchPolicies = true
+            }
+        else null
+    }
+
+    hidden _branchPolicies: Listing<branchpolicy.BranchPolicy> = new {
+        for (_pattern in branchPatterns) {
+            new {
+                label = "\(envName)-branch-\(_pattern)"
+                environment = env.res.name
+                name = _pattern
+            }
+        }
+    }
+
+    hidden _secrets: Listing<envsecret.Secret> = new {
+        for (_name, _value in secrets) {
+            new {
+                label = "\(envName)-\(_name.toLowerCase().replaceAll("_", "-"))"
+                environment = env.res.name
+                name = _name
+                value = _value
+            }
+        }
+    }
+
+    hidden _variables: Listing<envvariable.Variable> = new {
+        for (_name, _value in variables) {
+            new {
+                label = "\(envName)-\(_name.toLowerCase().replaceAll("_", "-"))"
+                environment = env.res.name
+                name = _name
+                value = _value
+            }
+        }
+    }
+
+    resources: Listing<formae.Resource> = new {
+        env
+        ..._branchPolicies
+        ..._secrets
+        ..._variables
+    }
+}

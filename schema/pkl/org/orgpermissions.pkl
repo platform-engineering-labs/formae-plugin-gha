@@ -1,0 +1,24 @@
+/// GitHub Actions organization permissions.
+module org.orgpermissions
+
+import "@formae/formae.pkl"
+import "../gha.pkl"
+
+/// A GitHub Actions organization permissions configuration.
+@gha.ResourceHint {
+    type = "GHA::Org::Permissions"
+    identifier = "nativeId"
+}
+class Permissions extends formae.Resource {
+    fixed hidden type: String = "GHA::Org::Permissions"
+
+    hidden nativeId: String = "permissions"
+
+    /// Which repositories are enabled for GitHub Actions.
+    @gha.FieldHint {}
+    enabledRepositories: ("all"|"none"|"selected")?
+
+    /// Which actions and reusable workflows are allowed.
+    @gha.FieldHint {}
+    allowedActions: ("all"|"local_only"|"selected")?
+}

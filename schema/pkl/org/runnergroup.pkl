@@ -1,0 +1,42 @@
+/// GitHub Actions organization runner group.
+module org.runnergroup
+
+import "@formae/formae.pkl"
+import "../gha.pkl"
+
+/// A GitHub Actions organization runner group.
+@gha.ResourceHint {
+    type = "GHA::Org::RunnerGroup"
+    identifier = "id"
+}
+class RunnerGroup extends formae.Resource {
+    fixed hidden type: String = "GHA::Org::RunnerGroup"
+
+    /// Runner group name.
+    @gha.FieldHint {}
+    name: String
+
+    /// Visibility: which repos can access this runner group.
+    @gha.FieldHint {}
+    visibility: gha.Visibility?
+
+    /// Repository IDs when visibility is "selected".
+    @gha.FieldHint {}
+    selectedRepositoryIds: Listing<Int>?
+
+    /// Whether public repositories can use this runner group.
+    @gha.FieldHint {}
+    allowsPublicRepositories: Boolean?
+
+    /// Whether the runner group is restricted to specific workflows.
+    @gha.FieldHint {}
+    restrictedToWorkflows: Boolean?
+
+    /// Workflows the runner group is allowed to run.
+    @gha.FieldHint {}
+    selectedWorkflows: Listing<String>?
+
+    /// Server-assigned runner group ID.
+    @gha.FieldHint {}
+    id: Int?
+}

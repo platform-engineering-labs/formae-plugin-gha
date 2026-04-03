@@ -1,0 +1,87 @@
+/// GitHub Actions deployment environment.
+///
+/// Environments define deployment targets with optional protection rules
+/// including wait timers, required reviewers, and branch policies.
+module env.environment
+
+import "@formae/formae.pkl"
+import "../gha.pkl"
+
+/// A reviewer for environment protection rules.
+@gha.SubResourceHint {}
+class Reviewer extends formae.SubResource {
+    /// Reviewer type: "User" or "Team".
+    @gha.FieldHint {}
+    type: "User"|"Team"
+
+    /// GitHub user ID or team ID.
+    @gha.FieldHint {}
+    id: Int
+}
+
+/// Deployment branch policy configuration.
+@gha.SubResourceHint {}
+class DeploymentBranchPolicyConfig extends formae.SubResource {
+    /// Only allow deployments from protected branches.
+    @gha.FieldHint {}
+    protectedBranches: Boolean
+
+    /// Use custom branch policies (managed via BranchPolicy resources).
+    @gha.FieldHint {}
+    customBranchPolicies: Boolean
+}
+
+/// Resolvable reference to an environment's output properties.
+open class EnvironmentResolvable extends formae.Resolvable {
+    hidden type = module.type
+
+    hidden name: EnvironmentResolvable = (this) {
+        property = "name"
+    }
+}
+
+const type = "GHA::Repo::Environment"
+
+/// A GitHub Actions deployment environment.
+@gha.ResourceHint {
+    type = module.type
+    identifier = "name"
+}
+class Environment extends formae.Resource {
+    fixed hidden type: String = module.type
+
+    /// Environment name (e.g., "production", "staging").
+    @gha.FieldHint { createOnly = true }
+    name: String
+
+    /// Wait timer in minutes (0-43200). 0 means no wait.
+    @gha.FieldHint {}
+    waitTimer: Int?
+
+    /// Whether to prevent self-reviews for deployments.
+    @gha.FieldHint {}
+    preventSelfReview: Boolean?
+
+    /// Whether admins can bypass protection rules.
+    @gha.FieldHint {}
+    canAdminsBypass: Boolean?
+
+    /// Required reviewers (max 6). Users or teams who must approve deployments.
+    @gha.FieldHint {
+        updateMethod = "EntitySet"
+        indexField = "id"
+    }
+    reviewers: Listing<Reviewer>?
+
+    /// Branch deployment policy configuration.
+    @gha.FieldHint {}
+    deploymentBranchPolicy: DeploymentBranchPolicyConfig?
+
+    local parent = this
+
+    /// Resolvable reference — use env.res.name to create a dependency.
+    hidden res: EnvironmentResolvable = new {
+        label = parent.label
+        stack = parent.stack?.label
+    }
+}

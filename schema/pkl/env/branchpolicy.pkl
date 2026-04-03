@@ -1,0 +1,29 @@
+/// GitHub Actions environment deployment branch policy.
+///
+/// Controls which branches can deploy to an environment.
+/// The parent environment must have customBranchPolicies=true.
+module env.branchpolicy
+
+import "@formae/formae.pkl"
+import "../gha.pkl"
+
+/// A deployment branch policy for an environment.
+@gha.ResourceHint {
+    type = "GHA::Environment::BranchPolicy"
+    identifier = "id"
+}
+class BranchPolicy extends formae.Resource {
+    fixed hidden type: String = "GHA::Environment::BranchPolicy"
+
+    /// The environment this policy belongs to. Use env.res.name for dependency ordering.
+    @gha.FieldHint { createOnly = true }
+    environment: String|formae.Resolvable
+
+    /// Branch or tag name pattern (e.g., "main", "release/*").
+    @gha.FieldHint {}
+    name: String
+
+    /// Policy type: "branch" or "tag".
+    @gha.FieldHint {}
+    policyType: ("branch"|"tag")?
+}

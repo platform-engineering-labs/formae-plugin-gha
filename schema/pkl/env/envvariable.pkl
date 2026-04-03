@@ -1,0 +1,26 @@
+/// GitHub Actions environment variable.
+module env.envvariable
+
+import "@formae/formae.pkl"
+import "../gha.pkl"
+
+/// A GitHub Actions environment variable.
+@gha.ResourceHint {
+    type = "GHA::Environment::Variable"
+    identifier = "name"
+}
+class Variable extends formae.Resource {
+    fixed hidden type: String = "GHA::Environment::Variable"
+
+    /// The environment this variable belongs to. Use env.res.name for dependency ordering.
+    @gha.FieldHint { createOnly = true }
+    environment: String|formae.Resolvable
+
+    /// Variable name.
+    @gha.FieldHint { createOnly = true }
+    name: String
+
+    /// Variable value (plaintext).
+    @gha.FieldHint {}
+    value: String
+}

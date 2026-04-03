@@ -1,0 +1,26 @@
+/// GitHub Actions repository variable.
+///
+/// Variables are plaintext key-value pairs available in workflow runs.
+/// Unlike secrets, variable values are readable via the API.
+module repo.repovariable
+
+import "@formae/formae.pkl"
+import "../gha.pkl"
+
+/// A GitHub Actions repository variable.
+@gha.ResourceHint {
+    type = "GHA::Repo::Variable"
+    identifier = "name"
+}
+class Variable extends formae.Resource {
+    fixed hidden type: String = "GHA::Repo::Variable"
+
+    /// Variable name. Must be uppercase alphanumeric + underscore.
+    /// Cannot start with GITHUB_ prefix.
+    @gha.FieldHint { createOnly = true }
+    name: String
+
+    /// Variable value (plaintext).
+    @gha.FieldHint {}
+    value: String
+}
