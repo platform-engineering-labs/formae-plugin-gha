@@ -9,8 +9,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/goccy/go-yaml"
 	"github.com/google/go-github/v69/github"
-	"gopkg.in/yaml.v3"
 
 	"github.com/platform-engineering-labs/formae-plugin-gha/pkg/config"
 	"github.com/platform-engineering-labs/formae-plugin-gha/pkg/provisioner"
@@ -18,6 +18,9 @@ import (
 )
 
 const WorkflowResourceType = "GHA::Repo::Workflow"
+
+// workflowKeyOrder defines the conventional key ordering for GitHub Actions workflow YAML.
+var workflowKeyOrder = []string{"name", "run-name", "on", "permissions", "env", "defaults", "concurrency", "jobs"}
 
 func init() {
 	provisioner.Register(WorkflowResourceType, func(client *github.Client, cfg *config.Config) provisioner.Provisioner {
@@ -41,12 +44,9 @@ func (p *workflowProvisioner) Create(ctx context.Context, req *resource.CreateRe
 		return provisioner.CreateFailure(resource.OperationErrorCodeInvalidRequest, "path is required"), nil
 	}
 
-	// Remove path and empty fields — path isn't part of the YAML, and empty
-	// maps/nulls would create false drift if GitHub strips them on read.
 	delete(props, "path")
-	stripEmpty(props)
 
-	yamlContent, err := yaml.Marshal(props)
+	yamlContent, err := marshalWorkflowYAML(props)
 	if err != nil {
 		return provisioner.CreateFailure(resource.OperationErrorCodeInternalFailure, fmt.Sprintf("failed to marshal YAML: %v", err)), nil
 	}
@@ -61,7 +61,6 @@ func (p *workflowProvisioner) Create(ctx context.Context, req *resource.CreateRe
 		return provisioner.CreateFailure(provisioner.ClassifyError(err), err.Error()), nil
 	}
 
-	// Return original properties (including path).
 	return provisioner.CreateSuccess(path, req.Properties), nil
 }
 
@@ -84,7 +83,6 @@ func (p *workflowProvisioner) Read(ctx context.Context, req *resource.ReadReques
 		return &resource.ReadResult{ResourceType: WorkflowResourceType, ErrorCode: resource.OperationErrorCodeInternalFailure}, nil
 	}
 
-	// Add path back to the structured properties.
 	workflowMap["path"] = req.NativeID
 
 	props := provisioner.MustMarshal(workflowMap)
@@ -98,14 +96,12 @@ func (p *workflowProvisioner) Update(ctx context.Context, req *resource.UpdateRe
 	}
 
 	delete(props, "path")
-	stripEmpty(props)
 
-	yamlContent, err := yaml.Marshal(props)
+	yamlContent, err := marshalWorkflowYAML(props)
 	if err != nil {
 		return provisioner.UpdateFailure(req.NativeID, resource.OperationErrorCodeInternalFailure, fmt.Sprintf("failed to marshal YAML: %v", err)), nil
 	}
 
-	// Get current SHA for the update.
 	currentFile, _, _, err := p.client.Repositories.GetContents(ctx, p.cfg.Owner, p.cfg.Repo, req.NativeID, nil)
 	if err != nil {
 		return provisioner.UpdateFailure(req.NativeID, provisioner.ClassifyError(err), err.Error()), nil
@@ -171,17 +167,35 @@ func (p *workflowProvisioner) Status(_ context.Context, req *resource.StatusRequ
 	return provisioner.StatusSuccess(req.NativeID), nil
 }
 
-// stripEmpty recursively removes nil values and empty maps from a map.
-func stripEmpty(m map[string]interface{}) {
-	for k, v := range m {
-		switch val := v.(type) {
-		case nil:
-			delete(m, k)
-		case map[string]interface{}:
-			stripEmpty(val)
-			if len(val) == 0 {
-				delete(m, k)
+// marshalWorkflowYAML converts a workflow properties map to YAML with conventional
+// key ordering (name, on, permissions, env, jobs) using yaml.MapSlice to preserve
+// insertion order.
+func marshalWorkflowYAML(data map[string]interface{}) ([]byte, error) {
+	var ms yaml.MapSlice
+
+	// Add keys in conventional workflow order
+	for _, key := range workflowKeyOrder {
+		val, ok := data[key]
+		if !ok {
+			continue
+		}
+		ms = append(ms, yaml.MapItem{Key: key, Value: val})
+	}
+
+	// Add any remaining keys not in the order list
+	for key, val := range data {
+		inOrder := false
+		for _, k := range workflowKeyOrder {
+			if key == k {
+				inOrder = true
+				break
 			}
 		}
+		if inOrder {
+			continue
+		}
+		ms = append(ms, yaml.MapItem{Key: key, Value: val})
 	}
+
+	return yaml.Marshal(ms)
 }
