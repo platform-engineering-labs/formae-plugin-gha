@@ -1,0 +1,341 @@
+amends "@formae/forma.pkl"
+
+import "@formae/formae.pkl"
+import "@gha/repo/repovariable.pkl" as repovar
+import "@gha/repo/reposecret.pkl" as reposecret
+import "@gha/repo/repoworkflow.pkl" as workflow
+import "@com.github.actions/Workflow.pkl" as GHAWorkflow
+
+import "vars.pkl"
+
+description {
+    text = """
+        Infrastructure-to-application pipeline demo.
+
+        Provisions an Azure PostgreSQL database with formae, deploys Miniflux
+        (RSS reader) as an Azure Container Instance, verifies the app is healthy,
+        and loads 5 RSS feeds. A separate destroy workflow tears everything down.
+
+        Two formae plugins working together: GHA manages the pipeline,
+        Azure manages the infrastructure.
+        """
+    confirm = true
+}
+
+local projectNameVar = new repovar.Variable {
+    label = "project-name"
+    name = "PROJECT_NAME"
+    value = vars.projectName
+}
+
+local azureRegionVar = new repovar.Variable {
+    label = "azure-region"
+    name = "AZURE_REGION"
+    value = vars.azureRegion
+}
+
+local azureClientId = new reposecret.Secret {
+    label = "azure-client-id"
+    name = "AZURE_CLIENT_ID"
+    value = read("env:AZURE_CLIENT_ID")
+}
+
+local azureTenantId = new reposecret.Secret {
+    label = "azure-tenant-id"
+    name = "AZURE_TENANT_ID"
+    value = read("env:AZURE_TENANT_ID")
+}
+
+local azureSubscriptionId = new reposecret.Secret {
+    label = "azure-subscription-id"
+    name = "AZURE_SUBSCRIPTION_ID"
+    value = read("env:AZURE_SUBSCRIPTION_ID")
+}
+
+local postgresPassword = new reposecret.Secret {
+    label = "postgres-password"
+    name = "POSTGRES_PASSWORD"
+    value = read?("env:POSTGRES_PASSWORD") ?? "ChangeMe123!"
+}
+
+local acrPassword = new reposecret.Secret {
+    label = "acr-password"
+    name = "ACR_PASSWORD"
+    value = read("env:ACR_PASSWORD")
+}
+
+local deployWorkflow = new workflow.Workflow {
+    label = "deploy-workflow"
+    path = ".github/workflows/deploy.yml"
+    name = "Deploy Infrastructure and Application"
+    on = new GHAWorkflow.On {
+        workflow_dispatch {
+            inputs {
+                ["dry-run"] {
+                    description = "Simulate without deploying"
+                    required = false
+                    type = "boolean"
+                    default = "false"
+                }
+            }
+        }
+    }
+    permissions = new GHAWorkflow.Permissions {
+        `id-token` = "write"
+        contents = "read"
+    }
+    jobs {
+        ["provision"] {
+            `runs-on` = "ubuntu-latest"
+            `timeout-minutes` = 20
+            outputs {
+                ["db_host"] = "${{ steps.extract.outputs.db_host }}"
+            }
+            steps {
+                new { uses = "actions/checkout@v4" }
+                new { name = "Install formae"; run = #"sudo /bin/bash -c "$(curl -fsSL https://hub.platform.engineering/setup/formae.sh)" -- -y"# }
+                new {
+                    name = "Configure Azure credentials"
+                    uses = "azure/login@v2"
+                    `with` {
+                        ["client-id"] = "${{ secrets.AZURE_CLIENT_ID }}"
+                        ["tenant-id"] = "${{ secrets.AZURE_TENANT_ID }}"
+                        ["subscription-id"] = "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+                    }
+                }
+                new {
+                    name = "Resolve Pkl dependencies"
+                    run = #"export PATH=/opt/pel/formae/bin:$PATH && pkl project resolve infra"#
+                }
+                new {
+                    name = "Provision database"
+                    run = #"""
+                        export PATH=/opt/pel/formae/bin:$PATH
+                        formae agent start &
+                        for i in $(seq 1 30); do
+                          if formae plugin list 2>/dev/null | grep -q AZURE; then
+                            echo "Azure plugin ready"
+                            break
+                          fi
+                          sleep 2
+                        done
+                        formae apply --mode reconcile --yes --watch infra/database.pkl
+                        """#
+                    env {
+                        ["AZURE_SUBSCRIPTION_ID"] = "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+                        ["POSTGRES_PASSWORD"] = "${{ secrets.POSTGRES_PASSWORD }}"
+                    }
+                }
+                new {
+                    id = "extract"
+                    name = "Extract DB endpoint"
+                    run = #"""
+                        echo "db_host=${{ vars.PROJECT_NAME }}-pg.postgres.database.azure.com" >> $GITHUB_OUTPUT
+                        """#
+                }
+            }
+        }
+        ["deploy-app"] {
+            needs { "provision" }
+            `runs-on` = "ubuntu-latest"
+            outputs {
+                ["app_url"] = "${{ steps.url.outputs.app_url }}"
+            }
+            steps {
+                new {
+                    name = "Configure Azure credentials"
+                    uses = "azure/login@v2"
+                    `with` {
+                        ["client-id"] = "${{ secrets.AZURE_CLIENT_ID }}"
+                        ["tenant-id"] = "${{ secrets.AZURE_TENANT_ID }}"
+                        ["subscription-id"] = "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+                    }
+                }
+                new {
+                    name = "Deploy Miniflux"
+                    run = #"""
+                        az container create \
+                          --resource-group ${{ vars.PROJECT_NAME }}-rg \
+                          --name miniflux-demo \
+                          --dns-name-label ${{ vars.PROJECT_NAME }} \
+                          --image formaedemoacr.azurecr.io/miniflux:2.2.19 \
+                          --registry-login-server formaedemoacr.azurecr.io \
+                          --registry-username formaedemoacr \
+                          --registry-password "${{ secrets.ACR_PASSWORD }}" \
+                          --os-type Linux \
+                          --cpu 1 \
+                          --memory 1 \
+                          --ports 8080 \
+                          --ip-address Public \
+                          --environment-variables \
+                            DATABASE_URL="postgres://pgadmin:${{ secrets.POSTGRES_PASSWORD }}@${{ needs.provision.outputs.db_host }}:5432/miniflux?sslmode=require" \
+                            RUN_MIGRATIONS=1 \
+                            CREATE_ADMIN=1 \
+                            ADMIN_USERNAME=admin \
+                            ADMIN_PASSWORD=demo1234 \
+                            LISTEN_ADDR=0.0.0.0:8080
+                        """#
+                }
+                new {
+                    id = "url"
+                    name = "Get app URL"
+                    run = #"""
+                        APP_FQDN=$(az container show \
+                          --resource-group ${{ vars.PROJECT_NAME }}-rg \
+                          --name miniflux-demo \
+                          --query 'ipAddress.fqdn' -o tsv)
+                        echo "app_url=http://$APP_FQDN:8080" >> $GITHUB_OUTPUT
+                        echo "App URL: http://$APP_FQDN:8080"
+                        """#
+                }
+            }
+        }
+        ["verify"] {
+            needs { "deploy-app" }
+            `runs-on` = "ubuntu-latest"
+            steps {
+                new {
+                    name = "Wait for healthy"
+                    run = #"""
+                        for i in $(seq 1 60); do
+                          if curl -sf "${{ needs.deploy-app.outputs.app_url }}/healthcheck" > /dev/null 2>&1; then
+                            echo "Miniflux is ready"
+                            break
+                          fi
+                          echo "Waiting... ($i/60)"
+                          sleep 2
+                        done
+                        """#
+                }
+                new {
+                    name = "Add RSS feeds"
+                    run = #"""
+                        APP_URL="${{ needs.deploy-app.outputs.app_url }}"
+                        for feed in \
+                          "https://hnrss.org/best" \
+                          "https://thenewstack.io/feed/" \
+                          "https://tldr.tech/api/rss/devops" \
+                          "https://hackernoon.com/feed" \
+                          "https://xkcd.com/rss.xml"; do
+                          for attempt in $(seq 1 5); do
+                            if curl -sf -X POST "$APP_URL/v1/feeds" \
+                              -u admin:demo1234 \
+                              -H "Content-Type: application/json" \
+                              -d "{\"feed_url\": \"$feed\", \"category_id\": 1}"; then
+                              break
+                            fi
+                            echo "Retrying feed $feed (attempt $attempt/5)..."
+                            sleep 3
+                          done
+                        done
+                        """#
+                }
+                new {
+                    name = "Verify feeds and entries"
+                    run = #"""
+                        APP_URL="${{ needs.deploy-app.outputs.app_url }}"
+                        curl -sf -X PUT "$APP_URL/v1/feeds/refresh" -u admin:demo1234
+                        FEED_COUNT=$(curl -sf "$APP_URL/v1/feeds" -u admin:demo1234 | jq 'length')
+                        echo "Feed count: $FEED_COUNT"
+                        [ "$FEED_COUNT" -eq 5 ] || exit 1
+                        for i in $(seq 1 30); do
+                          COUNT=$(curl -sf "$APP_URL/v1/entries?limit=1" -u admin:demo1234 | jq '.total')
+                          if [ "$COUNT" -gt 0 ]; then
+                            echo "Entries loaded: $COUNT"
+                            exit 0
+                          fi
+                          sleep 2
+                        done
+                        exit 1
+                        """#
+                }
+            }
+        }
+    }
+}
+
+local destroyWorkflow = new workflow.Workflow {
+    label = "destroy-workflow"
+    path = ".github/workflows/destroy.yml"
+    name = "Destroy Infrastructure and Application"
+    on = new GHAWorkflow.On {
+        workflow_dispatch {
+            inputs {
+                ["confirm"] {
+                    description = "Type 'destroy' to confirm"
+                    required = true
+                    type = "string"
+                }
+            }
+        }
+    }
+    permissions = new GHAWorkflow.Permissions {
+        `id-token` = "write"
+        contents = "read"
+    }
+    jobs {
+        ["destroy"] {
+            `if` = "github.event.inputs.confirm == 'destroy'"
+            `runs-on` = "ubuntu-latest"
+            `timeout-minutes` = 20
+            steps {
+                new { uses = "actions/checkout@v4" }
+                new { name = "Install formae"; run = #"sudo /bin/bash -c "$(curl -fsSL https://hub.platform.engineering/setup/formae.sh)" -- -y"# }
+                new {
+                    name = "Configure Azure credentials"
+                    uses = "azure/login@v2"
+                    `with` {
+                        ["client-id"] = "${{ secrets.AZURE_CLIENT_ID }}"
+                        ["tenant-id"] = "${{ secrets.AZURE_TENANT_ID }}"
+                        ["subscription-id"] = "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+                    }
+                }
+                new {
+                    name = "Destroy container"
+                    run = #"az container delete --resource-group ${{ vars.PROJECT_NAME }}-rg --name miniflux-demo --yes || true"#
+                }
+                new {
+                    name = "Resolve Pkl dependencies"
+                    run = #"export PATH=/opt/pel/formae/bin:$PATH && pkl project resolve infra"#
+                }
+                new {
+                    name = "Destroy infrastructure"
+                    run = #"""
+                        export PATH=/opt/pel/formae/bin:$PATH
+                        formae agent start &
+                        for i in $(seq 1 30); do
+                          if formae plugin list 2>/dev/null | grep -q AZURE; then
+                            echo "Azure plugin ready"
+                            break
+                          fi
+                          sleep 2
+                        done
+                        formae destroy --yes --watch infra/database.pkl
+                        formae agent stop
+                        """#
+                    env {
+                        ["AZURE_SUBSCRIPTION_ID"] = "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+                        ["POSTGRES_PASSWORD"] = "${{ secrets.POSTGRES_PASSWORD }}"
+                    }
+                }
+            }
+        }
+    }
+}
+
+forma {
+    vars.stack
+    vars.target
+
+    deployWorkflow
+    destroyWorkflow
+
+    projectNameVar
+    azureRegionVar
+
+    azureClientId
+    azureTenantId
+    azureSubscriptionId
+    postgresPassword
+    acrPassword
+}
