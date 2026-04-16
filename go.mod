@@ -1,12 +1,12 @@
 module github.com/platform-engineering-labs/formae-plugin-gha
 
-go 1.25.0
+go 1.26
 
 require (
 	github.com/goccy/go-yaml v1.19.2
 	github.com/google/go-github/v69 v69.2.0
 	github.com/platform-engineering-labs/formae/pkg/plugin v0.1.22
-	github.com/platform-engineering-labs/formae/pkg/plugin-conformance-tests v0.1.40
+	github.com/platform-engineering-labs/formae/pkg/plugin-conformance-tests v0.1.42
 	golang.org/x/crypto v0.49.0
 )
 
@@ -59,3 +59,7 @@ require (
 	google.golang.org/grpc v1.78.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 )
+
+replace ergo.services/ergo => github.com/JeroenSoeters/ergo v1.999.320-pel.1
+
+replace ergo.services/actor/statemachine => github.com/JeroenSoeters/actor/statemachine v0.0.0-20260319024748-85c28f9f660b

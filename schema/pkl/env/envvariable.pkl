@@ -8,6 +8,11 @@ import "../gha.pkl"
 @gha.ResourceHint {
     type = "GHA::Environment::Variable"
     identifier = "name"
+    parent = "GHA::Repo::Environment"
+    listParam = new formae.ListProperty {
+        parentProperty = "name"
+        listParameter = "environment"
+    }
 }
 class Variable extends formae.Resource {
     fixed hidden type: String = "GHA::Environment::Variable"

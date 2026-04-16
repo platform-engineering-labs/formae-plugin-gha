@@ -127,8 +127,34 @@ func (p *envSecretProvisioner) Delete(ctx context.Context, req *resource.DeleteR
 	return provisioner.DeleteSuccess(req.NativeID), nil
 }
 
-func (p *envSecretProvisioner) List(_ context.Context, _ *resource.ListRequest) (*resource.ListResult, error) {
-	return &resource.ListResult{NativeIDs: []string{}}, nil
+func (p *envSecretProvisioner) List(ctx context.Context, req *resource.ListRequest) (*resource.ListResult, error) {
+	envName, ok := req.AdditionalProperties["environment"]
+	if !ok || envName == "" {
+		return nil, fmt.Errorf("environment is required to list environment secrets")
+	}
+
+	repoID, err := p.getRepoID(ctx, p.cfg.Owner, p.cfg.Repo)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get repository: %w", err)
+	}
+
+	var allIDs []string
+	opts := &github.ListOptions{PerPage: 100}
+	for {
+		secrets, resp, err := p.client.Actions.ListEnvSecrets(ctx, repoID, envName, opts)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list env secrets: %w", err)
+		}
+		for _, s := range secrets.Secrets {
+			allIDs = append(allIDs, envName+"/"+s.Name)
+		}
+		if resp.NextPage == 0 {
+			break
+		}
+		opts.Page = resp.NextPage
+	}
+
+	return &resource.ListResult{NativeIDs: allIDs}, nil
 }
 
 func (p *envSecretProvisioner) Status(_ context.Context, req *resource.StatusRequest) (*resource.StatusResult, error) {

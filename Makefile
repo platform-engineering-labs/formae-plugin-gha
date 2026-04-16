@@ -80,10 +80,11 @@ clean-environment:
 	@./scripts/ci/clean-environment.sh
 
 ## conformance-test: Run all conformance tests (CRUD + discovery)
-## Usage: make conformance-test [VERSION=0.83.0] [TEST=resource] [TIMEOUT=5]
+## Usage: make conformance-test [VERSION=0.84.0] [TEST=resource] [TIMEOUT=5]
 conformance-test: conformance-test-crud conformance-test-discovery
 
 ## conformance-test-crud: Run only CRUD lifecycle tests
+## Usage: make conformance-test-crud [VERSION=0.84.0] [TEST=resource] [TIMEOUT=5]
 conformance-test-crud: install
 	@echo "Pre-test cleanup..."
 	@./scripts/ci/clean-environment.sh || true
@@ -97,6 +98,7 @@ conformance-test-crud: install
 	exit $$TEST_EXIT
 
 ## conformance-test-discovery: Run only discovery tests
+## Usage: make conformance-test-discovery [VERSION=0.84.0] [TEST=resource] [TIMEOUT=5]
 conformance-test-discovery: install
 	@echo "Pre-test cleanup..."
 	@./scripts/ci/clean-environment.sh || true

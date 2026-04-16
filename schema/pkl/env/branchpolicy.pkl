@@ -11,6 +11,11 @@ import "../gha.pkl"
 @gha.ResourceHint {
     type = "GHA::Environment::BranchPolicy"
     identifier = "id"
+    parent = "GHA::Repo::Environment"
+    listParam = new formae.ListProperty {
+        parentProperty = "name"
+        listParameter = "environment"
+    }
 }
 class BranchPolicy extends formae.Resource {
     fixed hidden type: String = "GHA::Environment::BranchPolicy"

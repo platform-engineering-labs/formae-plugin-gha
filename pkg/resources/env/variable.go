@@ -119,10 +119,29 @@ func (p *envVariableProvisioner) Delete(ctx context.Context, req *resource.Delet
 	return provisioner.DeleteSuccess(req.NativeID), nil
 }
 
-func (p *envVariableProvisioner) List(_ context.Context, _ *resource.ListRequest) (*resource.ListResult, error) {
-	// Environment variables require knowing the environment name, which comes from AdditionalProperties.
-	// For discovery, we'd need to enumerate environments first — skip for now.
-	return &resource.ListResult{NativeIDs: []string{}}, nil
+func (p *envVariableProvisioner) List(ctx context.Context, req *resource.ListRequest) (*resource.ListResult, error) {
+	envName, ok := req.AdditionalProperties["environment"]
+	if !ok || envName == "" {
+		return nil, fmt.Errorf("environment is required to list environment variables")
+	}
+
+	var allIDs []string
+	opts := &github.ListOptions{PerPage: 100}
+	for {
+		vars, resp, err := p.client.Actions.ListEnvVariables(ctx, p.cfg.Owner, p.cfg.Repo, envName, opts)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list env variables: %w", err)
+		}
+		for _, v := range vars.Variables {
+			allIDs = append(allIDs, envName+"/"+v.Name)
+		}
+		if resp.NextPage == 0 {
+			break
+		}
+		opts.Page = resp.NextPage
+	}
+
+	return &resource.ListResult{NativeIDs: allIDs}, nil
 }
 
 func (p *envVariableProvisioner) Status(_ context.Context, req *resource.StatusRequest) (*resource.StatusResult, error) {

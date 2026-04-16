@@ -145,9 +145,22 @@ func (p *branchPolicyProvisioner) Delete(ctx context.Context, req *resource.Dele
 	return provisioner.DeleteSuccess(req.NativeID), nil
 }
 
-func (p *branchPolicyProvisioner) List(_ context.Context, _ *resource.ListRequest) (*resource.ListResult, error) {
-	// Branch policies require knowing the environment name — skip for discovery.
-	return &resource.ListResult{NativeIDs: []string{}}, nil
+func (p *branchPolicyProvisioner) List(ctx context.Context, req *resource.ListRequest) (*resource.ListResult, error) {
+	envName, ok := req.AdditionalProperties["environment"]
+	if !ok || envName == "" {
+		return nil, fmt.Errorf("environment is required to list branch policies")
+	}
+
+	resp, _, err := p.client.Repositories.ListDeploymentBranchPolicies(ctx, p.cfg.Owner, p.cfg.Repo, envName)
+	if err != nil {
+		return nil, err
+	}
+
+	allIDs := make([]string, 0, len(resp.BranchPolicies))
+	for _, policy := range resp.BranchPolicies {
+		allIDs = append(allIDs, envName+"/"+strconv.FormatInt(policy.GetID(), 10))
+	}
+	return &resource.ListResult{NativeIDs: allIDs}, nil
 }
 
 func (p *branchPolicyProvisioner) Status(_ context.Context, req *resource.StatusRequest) (*resource.StatusResult, error) {

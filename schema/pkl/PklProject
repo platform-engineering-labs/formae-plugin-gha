@@ -9,7 +9,7 @@ package {
 
 dependencies {
   ["formae"] {
-    uri = "package://hub.platform.engineering/plugins/pkl/schema/pkl/formae/formae@0.83.0"
+    uri = "package://hub.platform.engineering/plugins/pkl/schema/pkl/formae/formae@0.84.0"
   }
   ["com.github.actions"] {
     uri = "package://pkg.pkl-lang.org/pkl-pantry/com.github.actions@1.3.2"

@@ -1,5 +1,7 @@
 # GitHub Actions Plugin for formae
 
+[![CI](https://github.com/platform-engineering-labs/formae-plugin-gha/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/platform-engineering-labs/formae-plugin-gha/actions/workflows/ci.yml)
+
 Manage GitHub Actions CI/CD infrastructure as code. Secrets, variables, environments,
 branch policies, and workflow files — declared in Pkl, applied with formae.
 
@@ -105,11 +107,24 @@ make verify-schema  # Validate Pkl schemas
 
 ### Testing
 
-```bash
-# Integration tests (requires GITHUB_TOKEN, GHA_TEST_OWNER, GHA_TEST_REPO)
-go test -v -tags=integration ./pkg/resources/...
+Integration and conformance tests hit the real GitHub API. Export:
 
-# Conformance tests (full CRUD lifecycle through formae agent)
+```bash
+export GITHUB_TOKEN=$(gh auth token)
+export GHA_TEST_OWNER=my-org         # owner of a scratch repo
+export GHA_TEST_REPO=my-test-repo    # clean-environment.sh wipes this repo
+```
+
+```bash
+make test-integration   # direct API coverage per resource
+make conformance-test   # full CRUD lifecycle through the formae agent
+```
+
+To run conformance against a local formae build (e.g. an unreleased version),
+point the harness at the binary:
+
+```bash
+export FORMAE_BINARY=/path/to/formae
 make conformance-test
 ```
 
