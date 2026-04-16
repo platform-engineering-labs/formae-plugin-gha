@@ -106,7 +106,7 @@ jobs:
 
       - name: Run conformance tests
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GHA_TEST_TOKEN }}
           FORMAE_TEST_RUN_ID: nightly-${{ github.run_id }}-${{ github.run_attempt }}
           FORMAE_TEST_TIMEOUT: "10"
         run: make conformance-test
@@ -125,5 +125,5 @@ jobs:
 
       - name: Clean up test resources
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GHA_TEST_TOKEN }}
         run: ./scripts/ci/clean-environment.sh
