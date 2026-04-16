@@ -1,0 +1,17 @@
+amends "pkl:Project"
+
+package {
+  name = "gha"
+  baseUri = "package://hub.platform.engineering/plugins/gha/schema/pkl/gha"
+  version = "0.1.0"
+  packageZipUrl = "https://hub.platform.engineering/plugins/gha/schema/pkl/gha@\(version).zip"
+}
+
+dependencies {
+  ["formae"] {
+    uri = "package://hub.platform.engineering/plugins/pkl/schema/pkl/formae/formae@0.84.0"
+  }
+  ["com.github.actions"] {
+    uri = "package://pkg.pkl-lang.org/pkl-pantry/com.github.actions@1.3.2"
+  }
+}

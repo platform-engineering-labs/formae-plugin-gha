@@ -1,0 +1,30 @@
+/// GitHub Actions organization variable.
+module org.orgvariable
+
+import "@formae/formae.pkl"
+import "../gha.pkl"
+
+/// A GitHub Actions organization variable.
+@gha.ResourceHint {
+    type = "GHA::Org::Variable"
+    identifier = "name"
+}
+class Variable extends formae.Resource {
+    fixed hidden type: String = "GHA::Org::Variable"
+
+    /// Variable name.
+    @gha.FieldHint { createOnly = true }
+    name: String
+
+    /// Variable value (plaintext).
+    @gha.FieldHint {}
+    value: String
+
+    /// Visibility: which repos can access this variable.
+    @gha.FieldHint {}
+    visibility: gha.Visibility
+
+    /// Repository IDs when visibility is "selected".
+    @gha.FieldHint {}
+    selectedRepositoryIds: Listing<Int>?
+}

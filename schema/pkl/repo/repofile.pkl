@@ -1,0 +1,35 @@
+/// GitHub repository file.
+///
+/// Manages files in a repository via the Contents API. Commonly used
+/// to create GitHub Actions workflow files (.github/workflows/*.yml)
+/// with content rendered from Pkl.
+module repo.repofile
+
+import "@formae/formae.pkl"
+import "../gha.pkl"
+
+/// A file in a GitHub repository.
+@gha.ResourceHint {
+    type = "GHA::Repo::File"
+    identifier = "path"
+}
+class File extends formae.Resource {
+    fixed hidden type: String = "GHA::Repo::File"
+
+    /// File path relative to the repository root (e.g., ".github/workflows/deploy.yml").
+    @gha.FieldHint { createOnly = true }
+    path: String
+
+    /// File content (plain text). For workflow files, use YamlRenderer
+    /// to render a Pkl object as YAML.
+    @gha.FieldHint {}
+    content: String
+
+    /// Commit message used when creating or updating the file.
+    @gha.FieldHint {}
+    commitMessage: String = "managed by formae"
+
+    /// Git branch to commit to. Defaults to the repo's default branch.
+    @gha.FieldHint { createOnly = true }
+    branch: String?
+}

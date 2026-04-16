@@ -1,0 +1,47 @@
+/// GitHub Actions workflow file as a structured resource.
+///
+/// Unlike `GHA::Repo::File` which treats content as a blob string,
+/// this resource stores workflow properties as structured fields —
+/// enabling field-level sync, meaningful diffs, and typed Pkl extraction.
+module repo.repoworkflow
+
+import "@formae/formae.pkl"
+import "../gha.pkl"
+import "@com.github.actions/Workflow.pkl" as GHAWorkflow
+
+/// A GitHub Actions workflow managed as a structured resource.
+@gha.ResourceHint {
+    type = "GHA::Repo::Workflow"
+    identifier = "path"
+}
+class Workflow extends formae.Resource {
+    fixed hidden type: String = "GHA::Repo::Workflow"
+
+    /// File path relative to the repository root (e.g., ".github/workflows/deploy.yml").
+    @gha.FieldHint { createOnly = true }
+    path: String
+
+    /// Workflow display name.
+    @gha.FieldHint {}
+    name: String?
+
+    /// Trigger events for the workflow.
+    @gha.FieldHint {}
+    on: GHAWorkflow.On?
+
+    /// Jobs defined in the workflow.
+    @gha.FieldHint {}
+    jobs: GHAWorkflow.Jobs?
+
+    /// Top-level permissions for the workflow.
+    @gha.FieldHint {}
+    permissions: (GHAWorkflow.Permissions|"read-all"|"write-all")?
+
+    /// Concurrency settings.
+    @gha.FieldHint {}
+    concurrency: GHAWorkflow.Concurrency?
+
+    /// Environment variables available to all jobs.
+    @gha.FieldHint {}
+    env: GHAWorkflow.EnvironmentVariables?
+}

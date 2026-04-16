@@ -1,0 +1,24 @@
+/// GitHub Actions organization default workflow permissions.
+module org.orgworkflowpermissions
+
+import "@formae/formae.pkl"
+import "../gha.pkl"
+
+/// A GitHub Actions organization default workflow permissions configuration.
+@gha.ResourceHint {
+    type = "GHA::Org::DefaultWorkflowPermissions"
+    identifier = "nativeId"
+}
+class DefaultWorkflowPermissions extends formae.Resource {
+    fixed hidden type: String = "GHA::Org::DefaultWorkflowPermissions"
+
+    hidden nativeId: String = "workflow-permissions"
+
+    /// Default permissions granted to the GITHUB_TOKEN.
+    @gha.FieldHint {}
+    defaultWorkflowPermissions: ("read"|"write")?
+
+    /// Whether GitHub Actions can approve pull request reviews.
+    @gha.FieldHint {}
+    canApprovePullRequestReviews: Boolean?
+}

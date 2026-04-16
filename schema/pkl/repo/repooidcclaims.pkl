@@ -1,0 +1,24 @@
+/// GitHub Actions repository OIDC subject claim customization.
+module repo.repooidcclaims
+
+import "@formae/formae.pkl"
+import "../gha.pkl"
+
+/// A GitHub Actions repository OIDC subject claim template.
+@gha.ResourceHint {
+    type = "GHA::Repo::OIDCClaims"
+    identifier = "nativeId"
+}
+class OIDCClaims extends formae.Resource {
+    fixed hidden type: String = "GHA::Repo::OIDCClaims"
+
+    hidden nativeId: String = "oidc-claims"
+
+    /// Whether to use the default OIDC subject claim template.
+    @gha.FieldHint {}
+    useDefault: Boolean?
+
+    /// Custom claim keys to include in the OIDC subject.
+    @gha.FieldHint {}
+    includeClaimKeys: Listing<String>?
+}
