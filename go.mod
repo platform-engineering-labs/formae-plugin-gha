@@ -3,11 +3,11 @@ module github.com/platform-engineering-labs/formae-plugin-gha
 go 1.25.0
 
 require (
+	github.com/goccy/go-yaml v1.19.2
 	github.com/google/go-github/v69 v69.2.0
 	github.com/platform-engineering-labs/formae/pkg/plugin v0.1.21
 	github.com/platform-engineering-labs/formae/pkg/plugin-conformance-tests v0.1.40
 	golang.org/x/crypto v0.49.0
-	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (

@@ -11,7 +11,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"gopkg.in/yaml.v3"
+	"github.com/goccy/go-yaml"
 )
 
 // Config holds target configuration for the GHA plugin.
@@ -39,10 +39,10 @@ func FromTargetConfig(targetConfig []byte) (*Config, error) {
 // Validate checks that all required fields are present.
 func (c *Config) Validate() error {
 	if c.Token == "" {
-		return fmt.Errorf("GitHub token not found. Checked: GITHUB_TOKEN env, gh auth token, ~/.config/gh/hosts.yml")
+		return fmt.Errorf("github token not found; checked: GITHUB_TOKEN env, gh auth token, ~/.config/gh/hosts.yml")
 	}
 	if c.Owner == "" {
-		return fmt.Errorf("Owner is required in target config")
+		return fmt.Errorf("owner is required in target config")
 	}
 	return nil
 }

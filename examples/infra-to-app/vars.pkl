@@ -1,0 +1,23 @@
+/// Shared configuration for the infra-to-app example.
+module vars
+
+import "@formae/formae.pkl"
+import "@gha/gha.pkl"
+
+projectName = "infra-to-app"
+
+stack = new formae.Stack {
+    label = "infra-to-app"
+    description = "Infrastructure-to-application pipeline demo"
+}
+
+target = new formae.Target {
+    label = "github"
+    namespace = "GHA"
+    config = new gha.Config {
+        owner = read("env:GHA_OWNER")
+        repo = read("env:GHA_REPO")
+    }
+}
+
+azureRegion = "westus"

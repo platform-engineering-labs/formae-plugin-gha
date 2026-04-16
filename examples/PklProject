@@ -1,0 +1,17 @@
+amends "pkl:Project"
+
+dependencies {
+  ["gha"] = import("../schema/pkl/PklProject")
+
+  ["formae"] {
+    uri = "package://hub.platform.engineering/plugins/pkl/schema/pkl/formae/formae@0.83.0"
+  }
+
+  ["com.github.actions"] {
+    uri = "package://pkg.pkl-lang.org/pkl-pantry/com.github.actions@1.3.2"
+  }
+
+  ["azure"] {
+    uri = "package://hub.platform.engineering/plugins/azure/schema/pkl/azure/azure@0.1.1"
+  }
+}

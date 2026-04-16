@@ -1,0 +1,24 @@
+import "@formae/formae.pkl"
+import "@azure/azure.pkl"
+
+projectName = "infra-to-app"
+
+location = "westus"
+
+subscriptionId = read("env:AZURE_SUBSCRIPTION_ID")
+
+adminLogin = "pgadmin"
+
+adminPassword = read?("env:POSTGRES_PASSWORD") ?? "ChangeMe123!"
+
+stack = new formae.Stack {
+    label = "infra-to-app-db"
+    description = "PostgreSQL database for Miniflux demo"
+}
+
+target = new formae.Target {
+    label = "azure"
+    config = new azure.Config {
+        subscriptionId = module.subscriptionId
+    }
+}

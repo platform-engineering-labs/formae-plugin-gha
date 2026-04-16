@@ -44,7 +44,7 @@ verify-schema:
 gen-pkl:
 	pkl project resolve schema/pkl
 	pkl project resolve testdata
-	pkl project resolve examples/ci-pipeline
+	pkl project resolve examples
 
 ## clean: Remove build artifacts
 clean:
