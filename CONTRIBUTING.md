@@ -7,49 +7,60 @@ plugin docs (configuration, supported resources, examples), see
 ## Prerequisites
 
 - Go 1.25+
-- [Pkl CLI](https://pkl-lang.org/main/current/pkl-cli/index.html)
-- A GitHub PAT with `repo` + `workflow` scopes
+- [Pkl CLI](https://pkl-lang.org/main/current/pkl-cli/index.html) 0.30+
+- GitHub credentials (for integration/conformance testing): a `GITHUB_TOKEN`
+  with `repo` + `workflow` scopes, plus `GHA_TEST_OWNER` / `GHA_TEST_REPO`
+  pointing at a scratch repo
 
 ## Local Installation
 
 ```bash
+# Install the plugin
 make install
 ```
 
 ## Building
 
 ```bash
-make build          # Build plugin binary
-make install        # Build + install locally
-make lint           # Run linter
-make verify-schema  # Validate Pkl schemas
+make build      # Build plugin binary
+make test-unit  # Run unit tests
+make lint       # Run linter
+make install    # Build + install locally
 ```
 
-## Testing
-
-Integration and conformance tests hit the real GitHub API. Export:
+## Local Testing
 
 ```bash
-export GITHUB_TOKEN=$(gh auth token)
-export GHA_TEST_OWNER=my-org         # owner of a scratch repo
-export GHA_TEST_REPO=my-test-repo    # clean-environment.sh wipes this repo
+# Install plugin locally
+make install
+
+# Start formae agent
+formae agent start
+
+# Apply example resources
+formae apply --mode reconcile --watch examples/basic/main.pkl
 ```
 
-```bash
-make test-integration   # direct API coverage per resource
-make conformance-test   # full CRUD lifecycle through the formae agent
-```
+## Credentials Setup for Testing
 
-To run conformance against a local formae build (e.g. an unreleased version),
-point the harness at the binary:
+The `scripts/ci/setup-credentials.sh` script verifies GitHub credentials before
+running conformance tests:
 
 ```bash
-export FORMAE_BINARY=/path/to/formae
+# Verify credentials are configured
+./scripts/ci/setup-credentials.sh
+
+# Run conformance tests (calls setup-credentials automatically)
 make conformance-test
 ```
 
-## Clean Environment
+## Conformance Testing
+
+Run the full CRUD lifecycle + discovery tests:
 
 ```bash
-GHA_TEST_OWNER=my-org GHA_TEST_REPO=my-test-repo ./scripts/ci/clean-environment.sh
+make conformance-test  # Latest formae version
 ```
+
+The `scripts/ci/clean-environment.sh` script cleans up test resources. It runs
+before and after conformance tests and is idempotent.

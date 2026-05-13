@@ -12,7 +12,7 @@ BINARY := $(PLUGIN_NAME)
 PLUGIN_BASE_DIR := $(HOME)/.pel/formae/plugins
 INSTALL_DIR := $(PLUGIN_BASE_DIR)/$(PLUGIN_NAME)/v$(PLUGIN_VERSION)
 
-.PHONY: all build test test-unit test-integration lint verify-schema gen-pkl clean install install-dev help clean-environment conformance-test conformance-test-crud conformance-test-discovery
+.PHONY: all build test test-unit test-integration lint lint-reuse add-license verify-schema gen-pkl clean install install-dev help clean-environment conformance-test conformance-test-crud conformance-test-discovery
 
 all: build
 
@@ -35,6 +35,14 @@ test-integration:
 ## lint: Run golangci-lint
 lint:
 	golangci-lint run
+
+## lint-reuse: Check REUSE license compliance
+lint-reuse:
+	./scripts/lint_reuse.sh
+
+## add-license: Add license headers to source files (idempotent)
+add-license:
+	./scripts/add_license.sh
 
 ## verify-schema: Validate Pkl schema files
 verify-schema:
