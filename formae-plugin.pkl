@@ -12,6 +12,7 @@ name = "gha"
 version = "0.1.0"
 namespace = "GHA"
 description = "GitHub Actions resource plugin for Formae"
+category = "cicd"
 license = "FSL-1.1-ALv2"
 minFormaeVersion = "0.84.0"
 
