@@ -9,6 +9,7 @@
  */
 
 name = "gha"
+// Placeholder. The hub-build pipeline overwrites this from the release tag at publish time.
 version = "0.1.0"
 namespace = "GHA"
 description = "GitHub Actions resource plugin for Formae"

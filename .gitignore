@@ -33,3 +33,5 @@ PklProject.deps.json
 CLAUDE.md
 .claude/
 progress.md
+schema/pkl/VERSION
+.out/
