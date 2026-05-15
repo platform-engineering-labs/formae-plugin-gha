@@ -6,7 +6,7 @@ require (
 	github.com/goccy/go-yaml v1.19.2
 	github.com/google/go-github/v69 v69.2.0
 	github.com/platform-engineering-labs/formae/pkg/model v0.1.23
-	github.com/platform-engineering-labs/formae/pkg/plugin v0.2.1
+	github.com/platform-engineering-labs/formae/pkg/plugin v0.2.2
 	github.com/platform-engineering-labs/formae/pkg/plugin-conformance-tests v0.2.4
 	golang.org/x/crypto v0.49.0
 )
