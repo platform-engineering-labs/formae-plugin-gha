@@ -4,7 +4,7 @@ dependencies {
   ["gha"] = import("../schema/pkl/PklProject")
 
   ["formae"] {
-    uri = "package://hub.platform.engineering/plugins/pkl/schema/pkl/formae/formae@0.83.0"
+    uri = "package://hub.platform.engineering/plugins/pkl/schema/pkl/formae/formae@0.88.0"
   }
 
   ["com.github.actions"] {
