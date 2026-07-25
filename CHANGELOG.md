@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Install with `sudo formae plugin install gha` on the host that runs the
 formae agent.
 
+## [0.1.3]
+
+### Changed
+
+- Secret payload fields are now typed `formae.SecretValue` so their values are hashed at rest end-to-end (previously stored in cleartext on the read/actual-state path). Covers the `value` field on `GHA::Environment::Secret`, `GHA::Org::Secret`, and `GHA::Repo::Secret`. Requires a formae agent on the matching release; `minFormaeVersion` is bumped to 0.88.0.
+
 ## [0.1.2]
 
 ### Changed
