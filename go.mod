@@ -7,7 +7,7 @@ require (
 	github.com/google/go-github/v69 v69.2.0
 	github.com/platform-engineering-labs/formae/pkg/model v0.1.26
 	github.com/platform-engineering-labs/formae/pkg/plugin v0.4.1
-	github.com/platform-engineering-labs/formae/pkg/plugin-conformance-tests v0.2.5
+	github.com/platform-engineering-labs/formae/pkg/plugin-conformance-tests v0.2.6
 	golang.org/x/crypto v0.49.0
 )
 
