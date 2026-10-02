@@ -1,11 +1,11 @@
-name: Nightly
+name: Monthly
 
 # Tests the plugin against formae main (or a dispatched branch) to catch SDK
 # regressions before release.
 
 on:
   schedule:
-    - cron: '0 3 * * *'  # 3 AM UTC
+    - cron: '0 3 1 * *'  # 3 AM UTC
   workflow_dispatch:
     inputs:
       formae_branch:
