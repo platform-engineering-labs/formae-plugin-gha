@@ -1,10 +1,36 @@
-# GitHub Actions Plugin for formae
+# GitHub Actions plugin for formae
 
 [![CI](https://github.com/platform-engineering-labs/formae-plugin-gha/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/platform-engineering-labs/formae-plugin-gha/actions/workflows/ci.yml)
 [![Monthly](https://github.com/platform-engineering-labs/formae-plugin-gha/actions/workflows/monthly.yml/badge.svg?branch=main)](https://github.com/platform-engineering-labs/formae-plugin-gha/actions/workflows/monthly.yml)
 
 Manage GitHub Actions CI/CD infrastructure as code. Secrets, variables, environments,
 branch policies, and workflow files — declared in Pkl, applied with formae.
+
+[formae](https://github.com/platform-engineering-labs/formae) · [Hub](https://hub.platform.engineering/platform.engineering/gha)
+
+## Install
+
+Requires the formae CLI: see the [quick start](https://docs.formae.ai/documentation/get-started/quickstart).
+
+```bash
+formae plugin install gha
+```
+
+Restart the formae agent afterwards so it loads the plugin.
+
+**New project:** with the agent running, `formae project init --include gha my-project` creates `my-project` with a `PklProject` that declares the formae and gha schema packages, so `import "@gha/..."` resolves, and a starter `main.pkl`. Don't run it in an existing project: it overwrites both files.
+
+**Existing project:** add the plugin to `dependencies` in your `PklProject`, with the current version from the [hub page](https://hub.platform.engineering/platform.engineering/gha), then run `pkl project resolve`:
+
+```pkl
+["gha"] {
+  uri = "package://hub.platform.engineering/plugins/gha/schema/pkl/gha/gha@<version>"
+}
+```
+
+Next: [write your first forma](https://docs.formae.ai/documentation/get-started/write-your-first-forma), then [`formae apply`](https://docs.formae.ai/documentation/reference/cli/apply) (see [apply modes](https://docs.formae.ai/documentation/concepts/apply-modes)).
+
+With an AI coding assistant, use the [formae plugin](https://docs.formae.ai/documentation/guides/ai-coding-assistants) (formerly `formae-mcp`), which can search the hub and fetch plugin examples. The formae documentation is also available as [llms.txt](https://docs.formae.ai/llms.txt).
 
 ## Supported Resources
 
