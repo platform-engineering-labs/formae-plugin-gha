@@ -1,7 +1,7 @@
 # GitHub Actions Plugin for formae
 
 [![CI](https://github.com/platform-engineering-labs/formae-plugin-gha/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/platform-engineering-labs/formae-plugin-gha/actions/workflows/ci.yml)
-[![Nightly](https://github.com/platform-engineering-labs/formae-plugin-gha/actions/workflows/nightly.yml/badge.svg?branch=main)](https://github.com/platform-engineering-labs/formae-plugin-gha/actions/workflows/nightly.yml)
+[![Monthly](https://github.com/platform-engineering-labs/formae-plugin-gha/actions/workflows/monthly.yml/badge.svg?branch=main)](https://github.com/platform-engineering-labs/formae-plugin-gha/actions/workflows/monthly.yml)
 
 Manage GitHub Actions CI/CD infrastructure as code. Secrets, variables, environments,
 branch policies, and workflow files — declared in Pkl, applied with formae.
